@@ -9,7 +9,6 @@ unsigned long csSum1 = 0, csSum2 = 0, csSum3 = 0, csSum4 = 0, csSum5 = 0;
 const int mainSensor = A5;
 const int lt1 = 3, lt2 = 5, lt3 = 6, lt4 = 9, lt5 = 10, lt6 = 13;
 int st1 = 0, st2 = 0, st3 = 0, st4 = 0, st5 = 0, st6 = 0;
-int old_st1 = 0, old_st2 = 0, old_st3 = 0, st4 = 0, st5 = 0, st6 = 0;
 float curState = 0, brightness = 120;
 unsigned long preTime = 0, postTime = 0;
 int checktime = 200, sence = 1;
@@ -37,7 +36,7 @@ void loop() {
   // 更新sensor:
   switch(sence){
   case 1:
-      st1 = (st1 ^ CSread(cs_7_A0)); sence = 1; /*Serial.println("1")*/; break;
+      st1 = (st1 ^ CSread(cs_7_A0)); sence = 2; /*Serial.println("1")*/; break;
   case 2:
       st2 = (st2 ^ CSread(cs_7_A1)); sence = 3; /*Serial.println("2")*/; break;
   case 3:

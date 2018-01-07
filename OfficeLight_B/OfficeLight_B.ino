@@ -5,7 +5,7 @@ CapacitiveSensor cs_7_A2 = CapacitiveSensor(7, A2);
 CapacitiveSensor cs_7_A3 = CapacitiveSensor(7, A3);
 CapacitiveSensor cs_7_A4 = CapacitiveSensor(7, A4);
 CapacitiveSensor cs_7_A5 = CapacitiveSensor(7, A5);
-unsigned long csSum1 = 0, csSum2 = 0, csSum3 = 0, csSum4 = 0, csSum5 = 0;
+unsigned int csSum1 = 0, csSum2 = 0, csSum3 = 0, csSum4 = 0, csSum5 = 0;
 const int mainSensor = A5;
 const int lt1 = 3, lt2 = 5, lt3 = 6, lt4 = 9, lt5 = 10, lt6 = 13;
 int st1 = 0, st2 = 0, st3 = 0, st4 = 0, st5 = 0, st6 = 0;
@@ -14,7 +14,7 @@ int cur_st1 = 0, cur_st2 = 0, cur_st3 = 0, cur_st4 = 0, cur_st5 = 0, cur_st6 = 0
 float curState = 0, brightness = 120;
 unsigned long preTime = 0, postTime = 0;
 int checktime = 200, sence = 1;
-float trigger;
+unsigned int trigger;
 void setup() {
   delay(2000);
     Serial.begin(9600);
@@ -30,9 +30,9 @@ void setup() {
     //cs += cs_7_A5.capacitiveSensor(10);
     Serial.println("/");
     }
-    trigger = cs/600.0f+150;
+    trigger = cs/600+70;
     Serial.print("trigger: ");
-    Serial.println(cs);
+    Serial.println(trigger);
     delay(2000);
 }
 
@@ -40,9 +40,9 @@ void loop() {
   // 更新sensor:
   switch(sence){
   case 1:
-      cur_st1 = CSread(cs_7_A0); if(!old_st1){ st1 = (st1 ^ cur_st1); } old_st1 = cur_st1; sence = 1; /*Serial.println("1")*/; break;
+      cur_st1 = CSread(cs_7_A0); if(!old_st1){ st1 = (st1 ^ cur_st1); } old_st1 = cur_st1; sence = 2; /*Serial.println("1")*/; break;
   case 2:
-      st2 = (st2 ^ CSread(cs_7_A1)); sence = 3; /*Serial.println("2")*/; break;
+      st2 = (st2 ^ CSread(cs_7_A1)); sence = 2; /*Serial.println("2")*/; break;
   case 3:
       st3 = (st3 ^ CSread(cs_7_A2)); sence = 4; /*Serial.println("3")*/; break;
   case 4:

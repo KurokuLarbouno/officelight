@@ -4,9 +4,8 @@ CapacitiveSensor cs_7_A1 = CapacitiveSensor(7, A1);
 CapacitiveSensor cs_7_A2 = CapacitiveSensor(7, A2);
 CapacitiveSensor cs_7_A3 = CapacitiveSensor(7, A3);
 CapacitiveSensor cs_7_A4 = CapacitiveSensor(7, A4);
-CapacitiveSensor cs_7_A5 = CapacitiveSensor(7, A5);
 const int mainSensor = A5;
-const int lt1 = 3, lt2 = 5, lt3 = 6, lt4 = 9, lt5 = 10, lt6 = 12, lt7 = 11;
+const int lt1 = 3, lt2 = 5, lt3 = 6, lt4 = 9, lt5 = 10;
 int st1 = 0, st2 = 0, st3 = 0, st4 = 0, st5 = 0, st6 = 0;//st6是主燈
 int sto = 0, stc = 0;
 float curState = 0, brightness = 120;
@@ -14,10 +13,9 @@ unsigned long preTime = 0, postTime = 0;
 int checktime = 200, sence = 1;
 unsigned int trigger;
 void setup() {
-    digitalWrite(lt6, 1);  digitalWrite(lt7, 1);
     Serial.begin(9600);
-    pinMode(A1, INPUT); pinMode(A2, INPUT);pinMode(A3, INPUT);pinMode(A4, INPUT);pinMode(A5, INPUT);pinMode(A6, INPUT);pinMode(mainSensor, INPUT);
-    pinMode(lt1, OUTPUT);pinMode(lt2, OUTPUT);pinMode(lt3, OUTPUT);pinMode(lt4, OUTPUT);pinMode(lt5, OUTPUT);pinMode(lt6, OUTPUT);pinMode(lt7, OUTPUT);
+    pinMode(A1, INPUT); pinMode(A2, INPUT);pinMode(A3, INPUT);pinMode(A4, INPUT);pinMode(A5, INPUT);pinMode(mainSensor, INPUT);
+    pinMode(11, OUTPUT);pinMode(lt1, OUTPUT);pinMode(lt2, OUTPUT);pinMode(lt3, OUTPUT);pinMode(lt4, OUTPUT);pinMode(lt5, OUTPUT);
     long cs = 0;
     for(int x = 0; x < 50; x++){
     cs += cs_7_A0.capacitiveSensor(30);
@@ -45,17 +43,14 @@ void loop() {
   case 4:
       st4 = (st4 ^ CSread(cs_7_A3)); sence = 5; /*Serial.println("4")*/; break;
   case 5:
-      st5 = (st5 ^ CSread(cs_7_A4)); sence = 6; /*Serial.println("5")*/; break;
-  case 6:
-      st6 = (st6 ^ CSread(cs_7_A5)); sence = 1; /*Serial.println("6")*/; break;
+      st5 = (st5 ^ CSread(cs_7_A4)); sence = 1; /*Serial.println("5")*/; break;
   }
   if(st1|| st2 || st3 || st4 || st5 ){
         curState += (brightness - curState) * 0.015;
         if(curState >= 100) brightness = 0;
         if(curState <= 10)  brightness = 120;
   }
-  digitalWrite(lt6, !st6);
-  digitalWrite(lt7, (st1|| st2 || st3 || st4 || st5 ));
+  if(digitalRead(2))digitalWrite(11, 1);else digitalWrite(11, 0);
   analogWrite(lt1, curState * st1);
   analogWrite(lt2, curState * st2);
   analogWrite(lt3, curState * st3);
@@ -64,6 +59,7 @@ void loop() {
 }
 bool CSread(CapacitiveSensor &capaSence) {
   long cs = capaSence.capacitiveSensor(30); //a: Sensor resolution is set to 80
+  Serial.println(cs);
   if (cs>= trigger) //c: This value is the threshold, a High value means it takes longer to trigger
   {
       capaSence.reset_CS_AutoCal(); //Stops readings

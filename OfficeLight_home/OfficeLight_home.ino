@@ -20,7 +20,7 @@ float platebr = 255;
 void setup() {
     Serial.begin(9600);
     pinMode(A1, INPUT); pinMode(A2, INPUT);pinMode(A3, INPUT);pinMode(A4, INPUT);pinMode(A5, INPUT);pinMode(A6, INPUT);pinMode(mainSensor, INPUT);
-    pinMode(lt1, OUTPUT);pinMode(lt2, OUTPUT);pinMode(lt3, OUTPUT);pinMode(lt4, OUTPUT);pinMode(lt5, OUTPUT);pinMode(lt6, OUTPUT);
+    pinMode(lt1, OUTPUT);pinMode(lt2, OUTPUT);pinMode(lt3, OUTPUT);pinMode(lt4, OUTPUT);pinMode(lt5, OUTPUT);pinMode(lt6, OUTPUT);pinMode(mainlt, OUTPUT);
     long cs = 0;
     unsigned int sum = 0;
     for(int x = 0; x < 50; x++){
@@ -67,8 +67,8 @@ void loop() {
   if(mainst == 1){
 //    Serial.print( millis()); Serial.print( "  "); Serial.println( plateposttime);
     if((millis()-plateposttime) >= 5000){
-      platebr += (10 - platebr) * 0.015;
-      if(platebr<12) plateposttime = millis();
+      platebr += (100 - platebr) * 0.015;
+      if(platebr<105) plateposttime = millis();
     }
     analogWrite(mainlt, platebr);
   }else{

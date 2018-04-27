@@ -126,23 +126,13 @@
         };
 
 //promicro pwm:3,5,6,9,10 Analog read:4,6,8,9,10,18,19,20,21 digital:2,3,5,7
-//腳位宣告區
-    //LED matix
-        //LedControl display=LedControl(12,11,10,1);
-        //LedControl display=LedControl(14,15,16,1);  // pin 12 is connected to the MAX7219 pin 1
-                                                    // pin 11 is connected to the CLK pin 13
-                                                    // pin 10 is connected to LOAD pin 12
-                                                    // 1 as we are only using 1 MAX7219
 //變數宣告區
     //IR
         const short IR_pin = 2;      // 紅外線接收-器
     //capa
         CapacitiveSensor* cs1; CapacitiveSensor* cs2;
-        CapacitiveSensor* cs3; CapacitiveSensor* cs4;
-        const short lt1 = 3, lt2 = 5, lt3 = 6, lt4 = 9;                                //狀態顯示燈
+        CapacitiveSensor* cs3; CapacitiveSensor* cs4;                                //狀態顯示燈
         unsigned int csSum1 = 0, csSum2 = 0, csSum3 = 0, csSum4 = 0, csSum5 = 0;       //電容觸控門檻
-        short st1 = 0, st2 = 0, st3 = 0, st4 = 0, st5 = 0;
-        float curState = 0, brightness = 120;
         int sence = 1;//現在檢查位置
         unsigned int trigger;
         Timer capa_timer;
@@ -155,6 +145,14 @@
     //LED strip
         LedStrip myStp;
         Timer stp_timer;    
+    //LED state light
+        Timer idle_timer;//休眠持續時間
+        Timer life_timer;//閃爍持續時間
+        const short lt1 = 3, lt2 = 5, lt3 = A6, lt4 = 9;
+        short st1 = 0, st2 = 0, st3 = 0, st4 = 0;
+        short t1 = 0, t2 = 0, t3 = 0, t4 = 0;
+        Timer en1, en2, en3, en4;
+        float curState = 0, brightness = 120;//現在值/目標值
     //animation
         unsigned long preTime = 0, post_time = 0, delta_time = 0;
         unsigned int score = 0;
@@ -162,40 +160,51 @@
 void setup() {
     Serial.begin(9600);
     //capa
+        capa_timer.setTime(500);
         cs1 = new CapacitiveSensor(7, A0); cs2 = new CapacitiveSensor(7, A1);
         cs3 = new CapacitiveSensor(7, A2); cs4 = new CapacitiveSensor(7, A3);
         pinMode(A0, INPUT); pinMode(A1, INPUT); pinMode(A2, INPUT); pinMode(A3, INPUT);
         pinMode(3, OUTPUT); pinMode(5, OUTPUT); pinMode(6, OUTPUT);  pinMode(9, OUTPUT);
-        // unsigned int cs;
-        // for(int x = 0; x < 50; x++){
-        //     cs += cs1.capacitiveSensor(30); cs += cs2.capacitiveSensor(30); cs += cs3.capacitiveSensor(30); cs += cs4.capacitiveSensor(30);
-        //     Serial.println("/");}
-        // trigger = cs/200+300; Serial.print("trigger: "); Serial.println(trigger);
+        unsigned int cs;
+        for(int x = 0; x < 50; x++){
+            cs += cs1->capacitiveSensor(30); cs += cs2->capacitiveSensor(30); cs += cs3->capacitiveSensor(30); cs += cs4->capacitiveSensor(30);
+            Serial.println("/");}
+        trigger = cs/200+300; Serial.print("trigger: "); Serial.println(trigger);
     //matrix
-        //display.clearDisplay(0);
-        //display.shutdown(0,false);
-        //display.setIntensity(0,10);
+        mat_timer.setTime(500);
         myMax.SetImg(IMAGES[0]);
-        myStp.SetUp();
+        myStp.Init();
         myStp.Emmit();
-    capa_timer.setTime(500);
-    IR_timer.setTime(500);
-    mat_timer.setTime(500);
-    IR_timer;
-    mat_timer;
-    preTime = millis();
-    post_time = preTime;
+    //IR
+        IR_timer.setTime(500);
+    //LED state
+        en1.setTime(2000); en2.setTime(2000); en3.setTime(2000); en4.setTime(2000);
+    //global
+        preTime = millis();
+        post_time = preTime;
 }
 void loop() {
     preTime = millis();
     delta_time = preTime - post_time;
     post_time = preTime;
-    // Serial.print("DT: "); Serial.println(delta_time);
 /*-----------------------------偵測-----------------------------*/
     //電容感應
-        // capaRead(delta_time);
+        capaRead(delta_time);
+    //LED state
+        if(st1||st2||st3||st4){
+            curState += (brightness - curState) * 0.0003;
+            if(curState >= 100) brightness = 0;
+            if(curState <= 10)  brightness = 120;
+            if(en1.tUpdate(delta_time) == 0){if(t1){en1.setTime(10000);lit();}if(!t1){t1 = 1;en1.setTime(2000);}}//t=>1:還沒閃完
+            if(en2.tUpdate(delta_time) == 0){if(t2){en2.setTime(10000);lit();}if(!t2){t2 = 1;en2.setTime(2000);}}
+            if(en3.tUpdate(delta_time) == 0){if(t3){en3.setTime(10000);lit();}if(!t3){t3 = 1;en3.setTime(2000);}}
+            if(en4.tUpdate(delta_time) == 0){if(t4){en4.setTime(10000);lit();}if(!t4){t4 = 1;en4.setTime(2000);}}
+        }
+
     //IR感應
-        IRRead();
+        IR_new_status = digitalRead(2);
+        if(IR_old_status == 1 && IR_new_status == 0){goaling = 1;}
+        IR_old_status = IR_new_status;
         if (IR_cd){
             goaling = false;
             if(IR_timer.tUpdate(delta_time)){IR_cd = 0; IR_timer.Reset();}
@@ -203,11 +212,24 @@ void loop() {
             goaling = false;
             IR_cd = true;
             if(score<100)score++;else score = 0;
-            goal();
+            //LED 燈條動畫
+                myMax.SetImg(IMAGES[score]);
+            //LED 陣列動畫
+                myStp.Emmit();
         }
+    
 /*-----------------------------顯示-----------------------------*/
+    //Matrix    
         myMax.Update(delta_time);
+    //LED strip
         myStp.sUpdate(delta_time);
+    //LED state
+        Serial.print(t1);  Serial.print(t2);  Serial.print(t3);  Serial.println(t4);
+        if(!t1) analogWrite(lt1, curState * st1);
+        if(!t2) analogWrite(lt2, curState * st2);
+        if(!t3) analogWrite(lt3, curState * st3);
+        if(!t4) analogWrite(lt4, curState * st4);
+
 }
 void capaRead(unsigned short delta){
     switch(sence){
@@ -220,36 +242,21 @@ void capaRead(unsigned short delta){
         case 4:
             st4 = (st4 ^ CSread(*cs4)); sence = 5; /*Serial.println("4")*/; break;
         case 5:
-            //if(capa_timer->Update(delta_time)){capa_timer->Reset();sence = 1;} 
+            if(capa_timer.tUpdate(delta)){capa_timer.Reset();sence = 1;} 
             break;
         }
 }
 bool CSread(CapacitiveSensor &capaSence) {
-  short cs = capaSence.capacitiveSensor(30); //a: Sensor resolution is set to 80
-  if (cs>= trigger) //c: This value is the threshold, a High value means it takes longer to trigger
-  {
-      capaSence.reset_CS_AutoCal(); //Stops readings
-      return(1);
-  }
-  return(0);
+    short cs = capaSence.capacitiveSensor(30); //a: Sensor resolution is set to 80
+    if (cs>= trigger) //c: This value is the threshold, a High value means it takes longer to trigger
+    {
+        capaSence.reset_CS_AutoCal(); //Stops readings
+        return(1);
+    }
+    return(0);
 }
-void IRRead(){
-    IR_new_status = digitalRead(2);
-    if(IR_old_status == 1 && IR_new_status == 0){goaling = 1;}
-    IR_old_status = IR_new_status;
+void lit(){
+    en1.setTime(2000); en2.setTime(2000); en3.setTime(2000); en4.setTime(2000);
+    t1 = 0;  t2 = 0;  t3 = 0;  t4 = 0;
+}
 
-}
-void goal(){
-    //LED 燈條動畫
-    myMax.SetImg(IMAGES[score]);
-    //LED 陣列動畫
-    myStp.Emmit();
-}
-// void displayImage(uint64_t image){
-//     for(int i = 0; i < 8; i++){
-//         byte row = (image >> i * 8) & 0xFF;
-//         for(int j = 0; j < 8; j++){
-//             display.setLed(0, i, j, bitRead(row, j));
-//         }
-//     }
-//}
